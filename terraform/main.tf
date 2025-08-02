@@ -12,11 +12,16 @@ terraform {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = var.aws_profile
+}
+
+data "aws_ssm_parameter" "ubuntu_ami" {
+  name = "/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp2/ami-id"
 }
 
 resource "aws_instance" "app_server" {
-  ami           = var.ami_id
+  ami           = data.aws_ssm_parameter.ubuntu_ami.value
   instance_type = var.instance_type
   user_data     = templatefile("${path.module}/scripts/setup.sh", {
     meili_url     = var.meili_url,
