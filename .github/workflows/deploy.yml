@@ -138,11 +138,21 @@ jobs:
           sudo pip3 install gunicorn
           sudo pip3 install -r /tmp/app/requirements.txt
           
-          export MEILI_URL="${{ secrets.MEILI_URL }}"
-          export MEILI_API_KEY="${{ secrets.MEILI_API_KEY }}"
+          # Create a self-contained startup script
+          cat << EOF > /tmp/run_app.sh
+#!/bin/bash
+export MEILI_URL="${{ secrets.MEILI_URL }}"
+export MEILI_API_KEY="${{ secrets.MEILI_API_KEY }}"
+cd /tmp
+gunicorn --workers 1 --bind 0.0.0.0:80 app.main:app
+EOF
+
+          # Make the script executable
+          chmod +x /tmp/run_app.sh
+
+          # Run the application using the script
+          sudo nohup /tmp/run_app.sh &
           
-          cd /tmp
-          sudo -E nohup gunicorn --workers 1 --bind 0.0.0.0:80 app.main:app &
           sleep 5 # Give the process a moment to start
           ps aux | grep gunicorn # Check if the process is running
           sudo ufw status # Check the firewall status 
