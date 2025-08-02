@@ -72,4 +72,8 @@ def events_search():
 
 @app.route("/events/refresh", methods=['POST'])
 def events_refresh():
-    return events_controller.refresh() 
+    return events_controller.refresh()
+
+if __name__ == '__main__':
+    # For development only. In production, use a WSGI server like Gunicorn.
+    app.run(host='0.0.0.0', port=5000, debug=True) 
