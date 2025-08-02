@@ -21,11 +21,6 @@ resource "aws_instance" "app_server" {
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   key_name      = var.key_name
 
-  provisioner "file" {
-    source      = "../app/"
-    destination = "/tmp/"
-  }
-
   tags = {
     Name = "KilogramsAPI"
   }

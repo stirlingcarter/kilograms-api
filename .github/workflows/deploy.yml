@@ -97,14 +97,24 @@ jobs:
         echo "ip=$PUBLIC_IP" >> $GITHUB_OUTPUT
         echo "Public IP is: $PUBLIC_IP"
 
+    - name: Copy application code to EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ steps.public_ip.outputs.ip }}
+        username: ubuntu
+        key: ${{ secrets.AWS_PRIVATE_KEY }}
+        source: "app/"
+        target: "/tmp/"
+
     - name: Setup Python API on EC2
       uses: appleboy/ssh-action@v0.1.5
       with:
         host: ${{ steps.public_ip.outputs.ip }}
         username: ubuntu
         key: ${{ secrets.AWS_PRIVATE_KEY }}
+        timeout: 30s
         script: |
           sudo apt-get update -y
-          sudo apt-get install python3-pip -y
-          sudo pip3 install -r /tmp/requirements.txt
-          sudo uvicorn app.main:app --host 0.0.0.0 --port 80 
+          sudo apt-get install -y python3-pip
+          sudo pip3 install -r /tmp/app/requirements.txt
+          sudo uvicorn app.main:app --host 0.0.0.0 --port 80 --root-path /tmp 
