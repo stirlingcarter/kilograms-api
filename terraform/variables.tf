@@ -1,0 +1,34 @@
+variable "aws_region" {
+  description = "The AWS region to create resources in."
+  default     = "us-east-1"
+}
+
+variable "instance_type" {
+  description = "The type of EC2 instance to launch."
+  default     = "t2.micro"
+}
+
+variable "ami_id" {
+  description = "The AMI to use for the EC2 instance."
+  default     = "ami-0c55b159cbfafe1f0" # Ubuntu 20.04 LTS for us-east-1
+}
+
+variable "key_name" {
+  description = "Name of the key pair to use for the EC2 instance."
+  default     = "deployer-key"
+}
+
+variable "public_key_path" {
+  description = "Path to the public key to be used for the EC2 instance."
+  default     = "~/.ssh/id_rsa.pub"
+}
+
+variable "meili_url" {
+  description = "The URL of the Meilisearch instance."
+  sensitive   = true
+}
+
+variable "meili_api_key" {
+  description = "The API key for the Meilisearch instance."
+  sensitive   = true
+} 
