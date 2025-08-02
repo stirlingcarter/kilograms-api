@@ -1,10 +1,10 @@
 resource "random_pet" "sg_name" {
-  length = 2
+  length    = 2
+  separator = "-"
 }
 
 resource "aws_security_group" "app_sg" {
-  name_prefix = "app-sg-"
-  name        = random_pet.sg_name.id
+  name        = "app-sg-${random_pet.sg_name.id}"
   description = "Allow HTTP and SSH inbound traffic"
 
   ingress {
