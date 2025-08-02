@@ -118,10 +118,19 @@ jobs:
         key: ${{ secrets.AWS_PRIVATE_KEY }}
         timeout: 30s
         script: |
-          # Wait for any background package operations to complete
+          # Wait for any background package operations to complete (with timeout)
+          counter=0
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
-            echo "Waiting for package manager to be available..."
+            echo "Waiting for package manager to be available... (attempt $counter)"
             sleep 10
+            counter=$((counter + 1))
+            if [ $counter -gt 6 ]; then
+              echo "Timeout waiting for package manager. Attempting to break locks..."
+              sudo killall apt apt-get dpkg >/dev/null 2>&1 || true
+              sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/lock >/dev/null 2>&1 || true
+              sudo dpkg --configure -a >/dev/null 2>&1 || true
+              break
+            fi
           done
           
           sudo apt-get update -y
