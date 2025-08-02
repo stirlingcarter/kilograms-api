@@ -1,16 +1,21 @@
 import os
+import sys
 import meilisearch
 import logging
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, jsonify, request
 
-# Import src modules
-from src.scrapers.nineteen_hz import get_19hz_events
-from src.normalizer import normalize_ra_event
-from src.deduplicator import deduplicate_events
-from src.savers import save_to_meilisearch
-from src.schema import MusicEvent
+# Add the current directory to Python path so we can import src modules
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    from src.scrapers.nineteen_hz import get_19hz_events
+    from src.normalizer import normalize_ra_event
+    from src.deduplicator import deduplicate_events
+    from src.schema import MusicEvent
+except ImportError as e:
+    logging.error(f"Failed to import src modules: {e}")
+    # We'll handle this gracefully in the endpoint
 
 app = Flask(__name__)
 
@@ -61,6 +66,14 @@ def health_check():
 def refresh_events():
     """Refresh events by scraping all cities in parallel and saving to Meilisearch."""
     try:
+        # Check if we have the required imports
+        try:
+            from src.scrapers.nineteen_hz import get_19hz_events
+            from src.normalizer import normalize_ra_event
+            from src.deduplicator import deduplicate_events
+        except ImportError as e:
+            return jsonify({"error": f"Missing required modules: {str(e)}"}), 500
+            
         logging.info("Starting events refresh for all cities")
         
         # Use ThreadPoolExecutor to scrape all cities in parallel
@@ -85,7 +98,6 @@ def refresh_events():
         # Save to Meilisearch
         if deduplicated_events:
             logging.info(f"Saving {len(deduplicated_events)} deduplicated events to Meilisearch")
-            # Create a custom save function that works with our Flask app's meilisearch client
             try:
                 index = client.index("events")
                 index.add_documents(deduplicated_events, primary_key='id')
