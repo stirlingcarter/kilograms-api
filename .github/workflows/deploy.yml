@@ -46,8 +46,8 @@ jobs:
       run: terraform plan -input=false
       working-directory: ./terraform
       env:
-        TF_VAR_meili_url: "dummy_url"
-        TF_VAR_meili_api_key: "dummy_key"
+        TF_VAR_meili_url: ${{ secrets.MEILI_URL }}
+        TF_VAR_meili_api_key: ${{ secrets.MEILI_API_KEY }}
 
   deploy:
     name: Deploy to AWS
