@@ -1,5 +1,6 @@
 # Kilograms API
-STABLE
+[![CI/CD Pipeline](https://github.com/stirlingcarter/kilograms-api/actions/workflows/deploy.yml/badge.svg)](https://github.com/stirlingcarter/kilograms-api/actions/workflows/deploy.yml)
+
 This repository contains the source code for a Python-based API that serves as a backend for the Kilograms project. It is designed to connect to a Meilisearch instance, providing a simple interface to search and retrieve data. The entire infrastructure is defined and managed using Terraform, allowing for automated and repeatable deployments on AWS.
 
 This project is a companion to the [`@kilograms-ms`](https://github.com/your-username/kilograms-ms) repository, which handles the deployment of the Meilisearch instance itself.
