@@ -10,13 +10,6 @@ MEILI_API_KEY = os.getenv("MEILI_API_KEY")
 
 client = meilisearch.Client(MEILI_URL, MEILI_API_KEY)
 
-@app.route("/config")
-def show_config():
-    return jsonify({
-        "MEILI_URL": MEILI_URL,
-        "MEILI_API_KEY_IS_SET": MEILI_API_KEY is not None
-    })
-
 @app.route("/")
 def hello_world():
     return "<h1>Kilograms API</h1><p>Welcome to the Kilograms Python API!</p>"
