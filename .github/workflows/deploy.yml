@@ -98,6 +98,9 @@ jobs:
         echo "ip=$PUBLIC_IP" >> $GITHUB_OUTPUT
         echo "Public IP is: $PUBLIC_IP"
 
+    - name: Wait for SSH to be ready
+      run: sleep 30s
+
     - name: Copy application code to EC2
       uses: appleboy/scp-action@master
       with:
