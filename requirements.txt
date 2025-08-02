@@ -1,5 +1,0 @@
-flask
-meilisearch
-requests
-beautifulsoup4
-gunicorn 
