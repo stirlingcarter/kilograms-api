@@ -1,6 +1,6 @@
 variable "aws_region" {
   description = "The AWS region to create resources in."
-  default     = "us-east-1"
+  default     = "us-2"
 }
 
 variable "instance_type" {
@@ -10,7 +10,7 @@ variable "instance_type" {
 
 variable "ami_id" {
   description = "The AMI to use for the EC2 instance."
-  default     = "ami-0c55b159cbfafe1f0" # Ubuntu 20.04 LTS for us-east-1
+  default     = "ami-0c55b159cbfafe1f0" # Ubuntu 20.04 LTS for us-east-2
 }
 
 variable "key_name" {
