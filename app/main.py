@@ -14,7 +14,7 @@ client = meilisearch.Client(MEILI_URL, MEILI_API_KEY)
 def hello_world():
     return "<h1>Kilograms API</h1><p>Welcome to the Kilograms Python API!</p>"
 
-@app.route("/health")
+@app.route("/healthi")
 def health_check():
     try:
         health = client.health()
@@ -22,9 +22,14 @@ def health_check():
     except Exception as e:
         return jsonify({"status": "error", "meilisearch": str(e)}), 503
 
-@app.route("/search")
+@app.route("/search", methods=['GET', 'POST'])
 def search():
-    query = request.args.get("q")
+    if request.method == 'POST':
+        data = request.get_json()
+        query = data.get('q') if data else None
+    else:  # GET
+        query = request.args.get("q")
+
     if not query:
         return jsonify({"error": "Missing query parameter 'q'"}), 400
 
