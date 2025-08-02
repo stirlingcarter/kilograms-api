@@ -173,7 +173,9 @@ jobs:
 
           # Run the startup script
           sudo /tmp/run_app.sh
-
+          
           sleep 30 # Wait for IAM role to propagate and app to start
           ps aux | grep gunicorn # Check if the process is running
+          echo "--- Displaying application log (/tmp/app.log) ---"
+          cat /tmp/app.log || echo "app.log not found or is empty."
           sudo systemctl status nginx # Check Nginx status 
