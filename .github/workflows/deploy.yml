@@ -133,6 +133,10 @@ jobs:
             fi
           done
           
+          # Kill existing gunicorn processes to allow a restart
+          sudo pkill gunicorn || true
+          sleep 5 # Give old process time to die
+
           sudo apt-get update -y
           sudo apt-get install -y python3-pip
           sudo pip3 install gunicorn
@@ -143,7 +147,8 @@ jobs:
           echo "export MEILI_URL=\"${{ secrets.MEILI_URL }}\"" >> /tmp/run_app.sh
           echo "export MEILI_API_KEY=\"${{ secrets.MEILI_API_KEY }}\"" >> /tmp/run_app.sh
           echo "cd /tmp" >> /tmp/run_app.sh
-          echo "gunicorn --workers 1 --bind 0.0.0.0:80 app.main:app" >> /tmp/run_app.sh
+          # Start gunicorn and log to /tmp/app.log
+          echo "gunicorn --workers 1 --bind 0.0.0.0:80 app.main:app > /tmp/app.log 2>&1" >> /tmp/run_app.sh
 
           # Make the script executable
           chmod +x /tmp/run_app.sh
