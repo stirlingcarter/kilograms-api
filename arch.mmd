@@ -1,0 +1,63 @@
+graph TB
+    iPhone["📱 iPhone<br/>Expo App"]
+    Flask["🐍 Flask Server<br/>EC2 Instance"]
+    Meili["🔍 MeiliSearch<br/>EC2 Instance<br/>Event Search"]
+    DynamoPosts[("🗃️ DynamoDB<br/>Posts Database<br/>(Planned)")]
+    DynamoUsers[("👥 DynamoDB<br/>User Profiles<br/>(Planned)")]
+    DynamoComments[("💬 DynamoDB<br/>Comments Database<br/>(Planned)")]
+    
+    iPhone --> Flask
+    Flask --> Meili
+    Flask -.-> DynamoPosts
+    Flask -.-> DynamoUsers
+    Flask -.-> DynamoComments
+    
+    subgraph "Post Schema"
+        PostData["• post_id: str<br/>• user_id: str<br/>• event_id: str<br/>• header_text: str<br/>• body_text: str<br/>• photo_urls: List[str]<br/>• comment_ids: List[str]<br/>• comment_count: int<br/>• like_count: int<br/>• created_at: str (ISO 8601)<br/>• updated_at: str"]
+    end
+    
+    subgraph "User Profile Schema"  
+        UserData["• user_id: str<br/>• username: str<br/>• display_name: str<br/>• email: str<br/>• profile_photo: str<br/>• bio: str<br/>• friend_ids: List[str]<br/>• liked_post_ids: List[str]<br/>• liked_comment_ids: List[str]<br/>• comment_ids: List[str]<br/>• created_at: str<br/>• last_active: str"]
+    end
+    
+    subgraph "Comment Schema"
+        CommentData["• id: str<br/>• post_id: str<br/>• user_id: str<br/>• text_content: str<br/>• liked_by_user_ids: List[str]<br/>• like_count: int<br/>• created_at: str (ISO 8601)<br/>• updated_at: str"]
+    end
+    
+    subgraph "MeiliSearch API"
+        MeiliAPI["GET /events?q='stussy knockdown center'<br/>POST /events data: Event<br/>PUT /events/{id} data: Event<br/>DELETE /events/{id}<br/>GET /events/{id}"]
+    end
+    
+    subgraph "Posts API"
+        PostsAPI["GET /posts?user_id={id}<br/>GET /posts?event_id={id}<br/>GET /posts/{post_id}<br/>POST /posts data: Post<br/>PUT /posts/{post_id} data: Post<br/>DELETE /posts/{post_id}<br/>POST /posts/{post_id}/like user_id: str<br/>DELETE /posts/{post_id}/like user_id: str"]
+    end
+    
+    subgraph "Users API"  
+        UsersAPI["GET /users/{user_id}<br/>GET /users?phone_number={phone}<br/>POST /users data: User<br/>PUT /users/{user_id} data: User<br/>DELETE /users/{user_id}<br/>POST /users/{user_id}/friends friend_id: str<br/>DELETE /users/{user_id}/friends/{friend_id}"]
+    end
+    
+    subgraph "Comments API"
+        CommentsAPI["GET /comments?post_id={id}<br/>GET /comments/{comment_id}<br/>POST /comments data: Comment<br/>PUT /comments/{comment_id} data: Comment<br/>DELETE /comments/{comment_id}<br/>POST /comments/{comment_id}/like user_id: str<br/>DELETE /comments/{comment_id}/like user_id: str"]
+    end
+    
+    subgraph "2FA Service API"
+        TwoFAAPI["POST /send-sms phone: str, message: str<br/>POST /verify-code phone: str, code: str<br/>Response: success: bool, message: str<br/>Dev Mode: Always returns success: true"]
+    end
+    
+    subgraph "Event Schema (MeiliSearch)"
+        EventData["• id: str<br/>• name: str<br/>• artists: List[str]<br/>• venue: str<br/>• city: str<br/>• country: str<br/>• date: str (ISO 8601)"]
+    end
+    
+    Meili -.-> MeiliAPI
+    DynamoPosts -.-> PostsAPI
+    DynamoUsers -.-> UsersAPI
+    DynamoComments -.-> CommentsAPI
+    TwoFAService -.-> TwoFAAPI
+    
+    classDef completed fill:#d4edda,stroke:#155724,stroke-width:2px
+    classDef planned fill:#fff3cd,stroke:#856404,stroke-width:2px,stroke-dasharray:5 5
+    classDef dev fill:#f8d7da,stroke:#721c24,stroke-width:2px
+    
+    class iPhone,Flask,Meili completed
+    class DynamoPosts,DynamoUsers,DynamoComments,TwoFAService planned
+    class AuthFlow dev
