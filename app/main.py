@@ -5,7 +5,7 @@ from flask import Flask, jsonify, request
 app = Flask(__name__)
 
 # Meilisearch client setup
-MEILI_URL = os.getenv("MEILI_URL", "http://127.0.0.1:7700")
+MEILI_URL = os.getenv("MEILI_URL", "http://18.217.93.15:7700")
 MEILI_API_KEY = os.getenv("MEILI_API_KEY")
 
 client = meilisearch.Client(MEILI_URL, MEILI_API_KEY)
