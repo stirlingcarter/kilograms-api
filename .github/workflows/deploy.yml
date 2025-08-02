@@ -93,7 +93,7 @@ jobs:
     - name: Get Public IP
       id: public_ip
       run: |
-        PUBLIC_IP=$(terraform -chdir=terraform output -raw public_ip)
+        PUBLIC_IP=$(terraform -chdir=terraform output -raw instance_public_ip)
         echo "ip=$PUBLIC_IP" >> $GITHUB_OUTPUT
         echo "Public IP is: $PUBLIC_IP"
 
