@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import controllers
 from controllers.home_controller import get_home
 from controllers.events_controller import events_controller
-from controllers.users_controller import initialize_users_controller, users_controller
+from controllers.users_controller import initialize_users_controller
 
 
 app = Flask(__name__)
@@ -34,7 +34,7 @@ users = {
 app.users = users
 
 # Initialize controllers
-initialize_users_controller(app, users)
+users_controller = initialize_users_controller(app, users)
 
 # Set up logging
 if os.environ.get('FLASK_ENV') == 'production':
@@ -81,4 +81,11 @@ def events_search():
 
 @app.route("/events/refresh", methods=['POST'])
 def events_refresh():
-    return events_controller.refresh() 
+    return events_controller.refresh()
+
+@app.route('/test-logging')
+def test_logging():
+    app.logger.info("This is an INFO test log message.")
+    app.logger.warning("This is a WARNING test log message.")
+    app.logger.error("This is an ERROR test log message.")
+    return "Log messages sent! Check CloudWatch.", 200 

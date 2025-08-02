@@ -62,8 +62,5 @@ class UsersController:
 
         return jsonify({'message': 'Profile updated successfully'}), 200
 
-users_controller = None
-
 def initialize_users_controller(app, users):
-    global users_controller
-    users_controller = UsersController(app, users) 
+    return UsersController(app, users) 
