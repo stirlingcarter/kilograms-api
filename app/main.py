@@ -5,7 +5,7 @@ from flask import Flask, jsonify, request
 app = Flask(__name__)
 
 # Meilisearch client setup
-MEILI_URL = os.getenv("MEILI_URL", "http://18.217.93.15:7700")
+MEILI_URL = "http://18.217.93.15:7700"
 MEILI_API_KEY = os.getenv("MEILI_API_KEY")
 
 client = meilisearch.Client(MEILI_URL, MEILI_API_KEY)
@@ -22,9 +22,14 @@ def health_check():
     except Exception as e:
         return jsonify({"status": "error", "meilisearch": str(e)}), 503
 
-@app.route("/search")
+@app.route("/search", methods=['GET', 'POST'])
 def search():
-    query = request.args.get("q")
+    if request.method == "POST":
+        data = request.get_json(silent=True)
+        query = data.get("q") if data else None
+    else:  # GET
+        query = request.args.get("q")
+
     if not query:
         return jsonify({"error": "Missing query parameter 'q'"}), 400
 
