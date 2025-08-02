@@ -18,6 +18,7 @@ provider "aws" {
 resource "aws_instance" "app_server" {
   ami           = var.ami_id
   instance_type = var.instance_type
+  iam_instance_profile = aws_iam_instance_profile.ec2_cloudwatch_profile.name
   user_data     = templatefile("${path.module}/scripts/setup.sh", {
     meili_url     = var.meili_url,
     meili_api_key = var.meili_api_key

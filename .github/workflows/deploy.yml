@@ -163,6 +163,7 @@ jobs:
           echo "#!/bin/bash" > /tmp/run_app.sh
           echo "export MEILI_URL=\"${{ secrets.MEILI_URL }}\"" >> /tmp/run_app.sh
           echo "export MEILI_API_KEY=\"${{ secrets.MEILI_API_KEY }}\"" >> /tmp/run_app.sh
+          echo "export FLASK_ENV=production" >> /tmp/run_app.sh
           echo "cd /tmp" >> /tmp/run_app.sh
           # Start gunicorn in the background and log to /tmp/app.log
           echo "nohup gunicorn --workers 4 --bind 127.0.0.1:5000 app.main:app > /tmp/app.log 2>&1 &" >> /tmp/run_app.sh
@@ -172,7 +173,7 @@ jobs:
 
           # Run the startup script
           sudo /tmp/run_app.sh
-          
-          sleep 5 # Give the process a moment to start
+
+          sleep 30 # Wait for IAM role to propagate and app to start
           ps aux | grep gunicorn # Check if the process is running
           sudo systemctl status nginx # Check Nginx status 

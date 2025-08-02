@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import watchtower
 from flask import Flask, request, jsonify
 from werkzeug.security import generate_password_hash
 from app.auth.decorators import token_required, user_identity_required
@@ -35,7 +36,13 @@ app.users = users
 initialize_users_controller(app, users)
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+if os.environ.get('FLASK_ENV') == 'production':
+    handler = watchtower.CloudWatchLogHandler(log_group_name=app.name)
+    app.logger.addHandler(handler)
+    logging.getLogger("werkzeug").addHandler(handler)
+    logging.basicConfig(level=logging.INFO)
+else:
+    logging.basicConfig(level=logging.INFO)
 
 # Routes
 @app.route("/")
