@@ -139,13 +139,11 @@ jobs:
           sudo pip3 install -r /tmp/app/requirements.txt
           
           # Create a self-contained startup script
-          cat << EOF > /tmp/run_app.sh
-#!/bin/bash
-export MEILI_URL="${{ secrets.MEILI_URL }}"
-export MEILI_API_KEY="${{ secrets.MEILI_API_KEY }}"
-cd /tmp
-gunicorn --workers 1 --bind 0.0.0.0:80 app.main:app
-EOF
+          echo "#!/bin/bash" > /tmp/run_app.sh
+          echo "export MEILI_URL='${{ secrets.MEILI_URL }}'" >> /tmp/run_app.sh
+          echo "export MEILI_API_KEY='${{ secrets.MEILI_API_KEY }}'" >> /tmp/run_app.sh
+          echo "cd /tmp" >> /tmp/run_app.sh
+          echo "gunicorn --workers 1 --bind 0.0.0.0:80 app.main:app" >> /tmp/run_app.sh
 
           # Make the script executable
           chmod +x /tmp/run_app.sh
