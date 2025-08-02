@@ -43,7 +43,7 @@ jobs:
         aws-region: us-east-2
 
     - name: Terraform Init
-      run: terraform init
+      run: terraform init -input=false -reconfigure
       working-directory: ./terraform
 
     - name: Terraform Validate
@@ -81,7 +81,7 @@ jobs:
         terraform_wrapper: false
 
     - name: Terraform Init
-      run: terraform -chdir=terraform init
+      run: terraform -chdir=terraform init -input=false -reconfigure
 
     - name: Terraform Apply
       id: apply
