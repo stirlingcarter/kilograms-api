@@ -19,7 +19,7 @@ resource "aws_instance" "app_server" {
     meili_api_key = var.meili_api_key
   })
   vpc_security_group_ids = [aws_security_group.app_sg.id]
-  key_name      = aws_key_pair.deployer.key_name
+  key_name      = var.key_name
 
   provisioner "file" {
     source      = "../app/"

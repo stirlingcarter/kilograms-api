@@ -18,11 +18,6 @@ variable "key_name" {
   default     = "deployer-key"
 }
 
-variable "public_key_path" {
-  description = "Path to the public key to be used for the EC2 instance."
-  default     = "~/.ssh/id_rsa.pub"
-}
-
 variable "meili_url" {
   description = "The URL of the Meilisearch instance."
   sensitive   = true
