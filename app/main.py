@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import watchtower
+import boto3
 from flask import Flask, request, jsonify
 from werkzeug.security import generate_password_hash
 from app.auth.decorators import token_required, user_identity_required
@@ -37,7 +38,8 @@ initialize_users_controller(app, users)
 
 # Set up logging
 if os.environ.get('FLASK_ENV') == 'production':
-    handler = watchtower.CloudWatchLogHandler(log_group_name=app.name)
+    boto3_client = boto3.client("logs", region_name="us-east-2")
+    handler = watchtower.CloudWatchLogHandler(boto3_client=boto3_client, log_group_name=app.name)
     app.logger.addHandler(handler)
     logging.getLogger("werkzeug").addHandler(handler)
     logging.basicConfig(level=logging.INFO)
