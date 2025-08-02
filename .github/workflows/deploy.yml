@@ -34,6 +34,14 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
 
+    - name: Configure AWS credentials
+      if: github.event_name == 'push'
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+
     - name: Terraform Init
       run: terraform init
       working-directory: ./terraform
@@ -67,15 +75,36 @@ jobs:
         aws-region: us-east-2
 
     - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.2.9
 
     - name: Terraform Init
-      run: terraform init
-      working-directory: ./terraform
+      run: terraform -chdir=terraform init
 
     - name: Terraform Apply
-      run: terraform apply --auto-approve
-      working-directory: ./terraform
-      env:
-        TF_VAR_meili_url: ${{ secrets.MEILI_URL }}
-        TF_VAR_meili_api_key: ${{ secrets.MEILI_API_KEY }} 
+      id: apply
+      run: |
+        terraform -chdir=terraform apply -auto-approve \
+          -var="key_name=${{ secrets.AWS_KEY_NAME }}" \
+          -var="meili_url=${{ secrets.MEILI_URL }}" \
+          -var="meili_api_key=${{ secrets.MEILI_API_KEY }}"
+
+    - name: Get Public IP
+      id: public_ip
+      run: |
+        PUBLIC_IP=$(terraform -chdir=terraform output -raw public_ip)
+        echo "ip=$PUBLIC_IP" >> $GITHUB_OUTPUT
+        echo "Public IP is: $PUBLIC_IP"
+
+    - name: Setup Python API on EC2
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ steps.public_ip.outputs.ip }}
+        username: ubuntu
+        key: ${{ secrets.AWS_PRIVATE_KEY }}
+        script: |
+          sudo apt-get update -y
+          sudo apt-get install python3-pip -y
+          sudo pip3 install -r /tmp/requirements.txt
+          sudo uvicorn app.main:app --host 0.0.0.0 --port 80 
