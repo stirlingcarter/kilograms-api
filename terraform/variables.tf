@@ -1,6 +1,11 @@
 variable "aws_region" {
   description = "The AWS region to create resources in."
-  default     = "us-2"
+  default     = "us-east-2"
+}
+
+variable "aws_profile" {
+  description = "The AWS profile to use."
+  default     = "kilograms"
 }
 
 variable "instance_type" {
