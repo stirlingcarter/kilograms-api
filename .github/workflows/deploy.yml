@@ -156,7 +156,7 @@ jobs:
               }
           }
           EOF
-          sudo ln -s /etc/nginx/sites-available/kilograms-api /etc/nginx/sites-enabled/kilograms-api || true
+          sudo ln -sf /etc/nginx/sites-available/kilograms-api /etc/nginx/sites-enabled/kilograms-api
           sudo systemctl restart nginx
 
           # Create a self-contained startup script
