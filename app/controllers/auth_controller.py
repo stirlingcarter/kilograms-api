@@ -31,12 +31,18 @@ class AuthController:
         if not user:
             self.logger.info(f"Phone number not found. Creating new user for: {phone_number}")
             user = self.user_service.create_user(phone_number)
+            if not user:
+                return jsonify({"error": "Failed to create a new user account."}), 500
         else:
             self.logger.info(f"Found existing user for phone number: {phone_number}")
 
         otp = self._generate_otp()
         otp_expiration = datetime.utcnow() + timedelta(minutes=10)
-        self.user_service.update_user_otp(user['user_id'], otp, otp_expiration)
+        
+        update_success = self.user_service.update_user_otp(user['user_id'], otp, otp_expiration)
+        if not update_success:
+            return jsonify({"error": "Failed to store OTP."}), 500
+
         self.logger.info(f"Generated and stored OTP {otp} for {phone_number}")
 
         try:
@@ -69,8 +75,8 @@ class AuthController:
         user = self.user_service.find_user_by_phone_number(phone_number)
 
         if not user:
-            self.logger.warning(f"OTP verification failed for {phone_number}: User not found")
-            return jsonify({"error": "Invalid or expired OTP."}), 401
+            self.logger.warning(f"OTP verification failed for {phone_number}: User not found after querying DynamoDB.")
+            return jsonify({"error": "An internal error occurred. User not found."}), 500
 
         # DynamoDB stores numbers as Decimal, need to convert for comparison
         stored_otp = user.get('otp')
@@ -87,7 +93,10 @@ class AuthController:
         self.logger.info(f"OTP successfully verified for {phone_number}")
 
         # Clear the OTP after successful verification
-        self.user_service.clear_user_otp(user['user_id'])
+        clear_success = self.user_service.clear_user_otp(user['user_id'])
+        if not clear_success:
+            # Log a warning but don't fail the login, as the user has already been verified.
+            self.logger.warning(f"Failed to clear OTP for user ID {user['user_id']}. This is not a critical failure.")
 
         self.logger.info(f"Generating JWT for user ID {user['user_id']}")
         token = jwt.encode({
