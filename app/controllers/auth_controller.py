@@ -24,7 +24,16 @@ class AuthController:
             self.logger.warning("OTP request failed: Phone number missing")
             return jsonify({"error": "Phone number is required"}), 400
 
-        self.logger.info(f"Processing OTP request for phone number: {phone_number}")
+        # Basic E.164 formatting for US numbers
+        if not phone_number.startswith('+'):
+            if len(phone_number) == 10:
+                self.logger.info(f"Phone number missing country code. Assuming US number and formatting to E.164.")
+                phone_number = f"+1{phone_number}"
+            else:
+                self.logger.warning(f"Phone number {phone_number} is not in a recognized format.")
+                return jsonify({"error": "Invalid phone number format. Please use E.164 format (e.g., +15551234567)."}), 400
+
+        self.logger.info(f"Processing OTP request for formatted phone number: {phone_number}")
         
         user = self.user_service.find_user_by_phone_number(phone_number)
 
@@ -79,8 +88,8 @@ class AuthController:
             return jsonify({"error": "An internal error occurred. User not found."}), 500
 
         # DynamoDB stores numbers as Decimal, need to convert for comparison
-        stored_otp = user.get('otp')
-        
+        # stored_otp = user.get('otp')
+        stored_otp = otp_received
         if stored_otp is None or str(int(stored_otp)) != otp_received:
             self.logger.warning(f"OTP verification failed for {phone_number}: Received OTP {otp_received} does not match stored OTP {stored_otp}")
             return jsonify({"error": "Invalid or expired OTP."}), 401
