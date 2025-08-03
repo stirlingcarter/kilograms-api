@@ -54,17 +54,20 @@ class AuthController:
 
         self.logger.info(f"Generated and stored OTP {otp} for {phone_number}")
 
-        try:
-            self.logger.info(f"Attempting to send OTP via Twilio to {phone_number}")
-            message = self.twilio_client.messages.create(
-                to=phone_number,
-                from_=self.app.config['TWILIO_PHONE_NUMBER'],
-                body=f"Your login code is: {otp}"
-            )
-            self.logger.info(f"Successfully sent OTP to {phone_number}. Message SID: {message.sid}")
-        except Exception as e:
-            self.logger.error(f"Twilio failed to send OTP to {phone_number}: {e}")
-            return jsonify({"error": "Failed to send OTP."}), 500
+        if self.app.config['TWILIO_ACTIVE']:
+            try:
+                self.logger.info(f"Attempting to send OTP via Twilio to {phone_number}")
+                message = self.twilio_client.messages.create(
+                    to=phone_number,
+                    from_=self.app.config['TWILIO_PHONE_NUMBER'],
+                    body=f"Your login code is: {otp}"
+                )
+                self.logger.info(f"Successfully sent OTP to {phone_number}. Message SID: {message.sid}")
+            except Exception as e:
+                self.logger.error(f"Twilio failed to send OTP to {phone_number}: {e}")
+                return jsonify({"error": "Failed to send OTP."}), 500
+        else:
+            self.logger.info(f"DEMO MODE: OTP for {phone_number} is: {otp}")
         
         self.logger.info(f"Successfully processed OTP request for {phone_number}")
         return jsonify({"message": "An OTP has been sent to your phone number."})
@@ -89,24 +92,27 @@ class AuthController:
 
         # DynamoDB stores numbers as Decimal, need to convert for comparison
         stored_otp = user.get('otp')
-        if  False:
+        
+        # When Twilio is inactive, any 6-digit code will pass for development.
+        if self.app.config['TWILIO_ACTIVE']:
             if stored_otp is None or str(int(stored_otp)) != otp_received:
                 self.logger.warning(f"OTP verification failed for {phone_number}: Received OTP {otp_received} does not match stored OTP {stored_otp}")
                 return jsonify({"error": "Invalid or expired OTP."}), 401
-            
-            expiration_str = user.get('otp_expiration')
-            
-            expiration_dt = None
-            if expiration_str:
-                # Python < 3.7 compatibility for fromisoformat
-                if '.' in expiration_str:
-                    expiration_dt = datetime.strptime(expiration_str, "%Y-%m-%dT%H:%M:%S.%f")
-                else:
-                    expiration_dt = datetime.strptime(expiration_str, "%Y-%m-%dT%H:%M:%S")
+        
+        expiration_str = user.get('otp_expiration')
+        
+        expiration_dt = None
+        if expiration_str:
+            # Python < 3.7 compatibility for fromisoformat
+            if '.' in expiration_str:
+                expiration_dt = datetime.strptime(expiration_str, "%Y-%m-%dT%H:%M:%S.%f")
+            else:
+                expiration_dt = datetime.strptime(expiration_str, "%Y-%m-%dT%H:%M:%S")
 
-            if not expiration_dt or datetime.utcnow() > expiration_dt:
-                self.logger.warning(f"OTP verification failed for {phone_number}: OTP has expired.")
-                return jsonify({"error": "Invalid or expired OTP."}), 401
+        # Commenting out the timestamp check for now as requested
+        # if not expiration_dt or datetime.utcnow() > expiration_dt:
+        #     self.logger.warning(f"OTP verification failed for {phone_number}: OTP has expired.")
+        #     return jsonify({"error": "Invalid or expired OTP."}), 401
 
         self.logger.info(f"OTP successfully verified for {phone_number}")
 

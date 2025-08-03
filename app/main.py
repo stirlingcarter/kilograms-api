@@ -29,6 +29,10 @@ app.config['TWILIO_PHONE_NUMBER'] = os.environ.get('TWILIO_PHONE_NUMBER')
 # AWS Configuration
 app.config['AWS_REGION'] = os.environ.get('AWS_REGION', 'us-east-2')
 
+# Feature Flags
+app.config['TWILIO_ACTIVE'] = os.environ.get('TWILIO_ACTIVE', 'false').lower() in ('true', '1', 't')
+
+
 # Initialize services
 user_service = initialize_user_service(app)
 
