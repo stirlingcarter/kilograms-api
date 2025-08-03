@@ -14,10 +14,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from controllers.home_controller import get_home
 from controllers.events_controller import events_controller
 from controllers.users_controller import initialize_users_controller
+from controllers.auth_controller import initialize_auth_controller
 
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-super-secret-and-long-string'
+
+# Twilio Configuration
+app.config['TWILIO_ACCOUNT_SID'] = os.environ.get('TWILIO_ACCOUNT_SID', 'your_account_sid')
+app.config['TWILIO_AUTH_TOKEN'] = os.environ.get('TWILIO_AUTH_TOKEN', 'your_auth_token')
+app.config['TWILIO_PHONE_NUMBER'] = os.environ.get('TWILIO_PHONE_NUMBER', 'your_twilio_phone_number')
 
 # For this example, we'll use a simple in-memory dictionary as our user database.
 # In a real application, you would connect to a database like PostgreSQL or MySQL.
@@ -25,8 +31,9 @@ app.config['SECRET_KEY'] = 'your-super-secret-and-long-string'
 users = {
     "1": {
         "phoneNumber": "1234567890",
-        "password": generate_password_hash("password123", method='pbkdf2:sha256'),
-        "name": "Test User"
+        "name": "Test User",
+        "otp": None,
+        "otp_expiration": None
     }
 }
 
@@ -35,6 +42,7 @@ app.users = users
 
 # Initialize controllers
 users_controller = initialize_users_controller(app, users)
+auth_controller = initialize_auth_controller(app, users)
 
 # Set up logging
 if os.environ.get('FLASK_ENV') == 'production':
@@ -51,9 +59,13 @@ else:
 def home():
     return get_home()
 
-@app.route('/login', methods=['POST'])
-def login():
-    return users_controller.login()
+@app.route('/auth/otp/send', methods=['POST'])
+def send_otp():
+    return auth_controller.send_otp()
+
+@app.route('/auth/otp/verify', methods=['POST'])
+def verify_otp():
+    return auth_controller.verify_otp()
 
 @app.route('/users/me', methods=['GET'])
 @token_required

@@ -1,35 +1,9 @@
-import jwt
-from datetime import datetime, timedelta
 from flask import jsonify, request
-from werkzeug.security import check_password_hash, generate_password_hash
 
 class UsersController:
     def __init__(self, app, users):
         self.app = app
         self.users = users
-
-    def login(self):
-        data = request.get_json()
-        if not data or not data.get('phoneNumber') or not data.get('password'):
-            return jsonify({'message': 'Could not verify'}), 401, {'WWW-Authenticate': 'Basic realm="Login required!"'}
-
-        phone_number = data.get('phoneNumber')
-        password = data.get('password')
-
-        user_id, user_data = next(
-            ((uid, udata) for uid, udata in self.users.items() if udata['phoneNumber'] == phone_number),
-            (None, None)
-        )
-
-        if not user_data or not check_password_hash(user_data['password'], password):
-            return jsonify({'message': 'Invalid credentials!'}), 401
-
-        token = jwt.encode({
-            'userId': user_id,
-            'exp': datetime.utcnow() + timedelta(days=30)
-        }, self.app.config['SECRET_KEY'], algorithm="HS256")
-
-        return jsonify({'token': token, 'userId': user_id})
 
     def get_my_profile(self, current_user, token_data):
         return jsonify({
