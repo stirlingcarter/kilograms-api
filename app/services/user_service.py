@@ -5,7 +5,7 @@ from boto3.dynamodb.conditions import Key
 class UserService:
     def __init__(self, app):
         self.logger = app.logger
-        self.dynamodb = boto3.resource('dynamodb')
+        self.dynamodb = boto3.resource('dynamodb', region_name=app.config['AWS_REGION'])
         self.table = self.dynamodb.Table('users')
 
     def find_user_by_phone_number(self, phone_number):
