@@ -163,6 +163,9 @@ jobs:
           echo "#!/bin/bash" > /tmp/run_app.sh
           echo "export MEILI_URL=\"${{ secrets.MEILI_URL }}\"" >> /tmp/run_app.sh
           echo "export MEILI_API_KEY=\"${{ secrets.MEILI_API_KEY }}\"" >> /tmp/run_app.sh
+          echo "export TWILIO_ACCOUNT_SID=\"${{ secrets.TWILIO_ACCOUNT_SID }}\"" >> /tmp/run_app.sh
+          echo "export TWILIO_AUTH_TOKEN=\"${{ secrets.TWILIO_AUTH_TOKEN }}\"" >> /tmp/run_app.sh
+          echo "export TWILIO_PHONE_NUMBER=\"${{ secrets.TWILIO_PHONE_NUMBER }}\"" >> /tmp/run_app.sh
           echo "export FLASK_ENV=production" >> /tmp/run_app.sh
           echo "cd /tmp" >> /tmp/run_app.sh
           # Start gunicorn in the background and log to /tmp/app.log
