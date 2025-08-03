@@ -27,6 +27,20 @@ class UserService:
             self.logger.error(f"DynamoDB query failed for phone number {phone_number}: {e.response['Error']['Message']}")
             return None
 
+    def find_user_by_id(self, user_id):
+        self.logger.info(f"Querying for user with ID: {user_id}")
+        try:
+            response = self.table.get_item(Key={'user_id': user_id})
+            item = response.get('Item')
+            if item:
+                self.logger.info(f"Found user for ID {user_id}")
+                return item
+            self.logger.info(f"No user found for ID: {user_id}")
+            return None
+        except ClientError as e:
+            self.logger.error(f"DynamoDB get_item failed for user ID {user_id}: {e.response['Error']['Message']}")
+            return None
+
     def create_user(self, phone_number):
         user_id = str(uuid.uuid4())
         self.logger.info(f"Attempting to create new user with ID {user_id} for phone number: {phone_number}")

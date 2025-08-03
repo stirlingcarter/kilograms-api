@@ -19,12 +19,15 @@ def token_required(f):
 
         try:
             secret_key = current_app.config['SECRET_KEY']
-            users = current_app.users
+            user_service = current_app.user_service
             data = jwt.decode(token, secret_key, algorithms=["HS256"])
             user_id = data.get('userId')
-            current_user = users.get(user_id)
+            
+            # Look up the user in DynamoDB to ensure they still exist
+            current_user = user_service.find_user_by_id(user_id)
             if not current_user:
                 return jsonify({'message': 'User not found!'}), 401
+            
         except Exception as e:
             logging.error(f"Token validation error: {e}")
             return jsonify({'message': 'Token is invalid!'}), 401
