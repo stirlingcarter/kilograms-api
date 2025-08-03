@@ -3,11 +3,12 @@ import random
 from datetime import datetime, timedelta
 from flask import jsonify, request
 from twilio.rest import Client
+from decimal import Decimal
 
 class AuthController:
-    def __init__(self, app, users):
+    def __init__(self, app, user_service):
         self.app = app
-        self.users = users
+        self.user_service = user_service
         self.logger = app.logger
         self.twilio_client = Client(app.config['TWILIO_ACCOUNT_SID'], app.config['TWILIO_AUTH_TOKEN'])
 
@@ -24,44 +25,32 @@ class AuthController:
             return jsonify({"error": "Phone number is required"}), 400
 
         self.logger.info(f"Processing OTP request for phone number: {phone_number}")
+        
+        user = self.user_service.find_user_by_phone_number(phone_number)
 
-        user = next((u for u in self.users.values() if u['phoneNumber'] == phone_number), None)
-
-        # For this example, we'll create a new user if they don't exist.
         if not user:
             self.logger.info(f"Phone number not found. Creating new user for: {phone_number}")
-            new_user_id = str(len(self.users) + 1)
-            user = {
-                "phoneNumber": phone_number,
-                "name": f"User {new_user_id}",
-                "otp": None,
-                "otp_expiration": None
-            }
-            self.users[new_user_id] = user
+            user = self.user_service.create_user(phone_number)
         else:
             self.logger.info(f"Found existing user for phone number: {phone_number}")
 
         otp = self._generate_otp()
-        user['otp'] = otp
-        user['otp_expiration'] = datetime.utcnow() + timedelta(minutes=10)
-        self.logger.info(f"Generated OTP {otp} for {phone_number}")
+        otp_expiration = datetime.utcnow() + timedelta(minutes=10)
+        self.user_service.update_user_otp(user['user_id'], otp, otp_expiration)
+        self.logger.info(f"Generated and stored OTP {otp} for {phone_number}")
 
-        # In a real app, you would uncomment this to send the SMS.
-        # try:
-        #     self.logger.info(f"Attempting to send OTP via Twilio to {phone_number}")
-        #     message = self.twilio_client.messages.create(
-        #         to=phone_number,
-        #         from_=self.app.config['TWILIO_PHONE_NUMBER'],
-        #         body=f"Your login code is: {otp}"
-        #     )
-        #     self.logger.info(f"Successfully sent OTP to {phone_number}. Message SID: {message.sid}")
-        # except Exception as e:
-        #     self.logger.error(f"Twilio failed to send OTP to {phone_number}: {e}")
-        #     return jsonify({"error": "Failed to send OTP."}), 500
+        try:
+            self.logger.info(f"Attempting to send OTP via Twilio to {phone_number}")
+            message = self.twilio_client.messages.create(
+                to=phone_number,
+                from_=self.app.config['TWILIO_PHONE_NUMBER'],
+                body=f"Your login code is: {otp}"
+            )
+            self.logger.info(f"Successfully sent OTP to {phone_number}. Message SID: {message.sid}")
+        except Exception as e:
+            self.logger.error(f"Twilio failed to send OTP to {phone_number}: {e}")
+            return jsonify({"error": "Failed to send OTP."}), 500
         
-        # For demonstration, we'll print the OTP to the console.
-        self.logger.info(f"DEMO MODE: OTP for {phone_number} is: {otp}")
-
         self.logger.info(f"Successfully processed OTP request for {phone_number}")
         return jsonify({"message": "An OTP has been sent to your phone number."})
 
@@ -77,43 +66,43 @@ class AuthController:
 
         self.logger.info(f"Processing OTP verification for {phone_number} with received OTP {otp_received}")
 
-        user_id, user_data = next(
-            ((uid, udata) for uid, udata in self.users.items() if udata['phoneNumber'] == phone_number),
-            (None, None)
-        )
+        user = self.user_service.find_user_by_phone_number(phone_number)
 
-        if not user_data:
+        if not user:
             self.logger.warning(f"OTP verification failed for {phone_number}: User not found")
             return jsonify({"error": "Invalid or expired OTP."}), 401
 
-        if user_data.get('otp') != otp_received:
-            self.logger.warning(f"OTP verification failed for {phone_number}: Received OTP {otp_received} does not match stored OTP {user_data.get('otp')}")
+        # DynamoDB stores numbers as Decimal, need to convert for comparison
+        stored_otp = user.get('otp')
+        
+        if stored_otp is None or str(int(stored_otp)) != otp_received:
+            self.logger.warning(f"OTP verification failed for {phone_number}: Received OTP {otp_received} does not match stored OTP {stored_otp}")
             return jsonify({"error": "Invalid or expired OTP."}), 401
-
-        if datetime.utcnow() > user_data.get('otp_expiration', datetime.min):
+        
+        expiration_str = user.get('otp_expiration')
+        if not expiration_str or datetime.utcnow() > datetime.fromisoformat(expiration_str):
             self.logger.warning(f"OTP verification failed for {phone_number}: OTP has expired.")
             return jsonify({"error": "Invalid or expired OTP."}), 401
 
         self.logger.info(f"OTP successfully verified for {phone_number}")
 
         # Clear the OTP after successful verification
-        user_data['otp'] = None
-        user_data['otp_expiration'] = None
+        self.user_service.clear_user_otp(user['user_id'])
 
-        self.logger.info(f"Generating JWT for user ID {user_id}")
+        self.logger.info(f"Generating JWT for user ID {user['user_id']}")
         token = jwt.encode({
-            'userId': user_id,
+            'userId': user['user_id'],
             'exp': datetime.utcnow() + timedelta(days=30)
         }, self.app.config['SECRET_KEY'], algorithm="HS256")
         
         user_profile = {
-            'userId': user_id,
-            'name': user_data.get('name'),
-            'phoneNumber': user_data.get('phoneNumber')
+            'userId': user['user_id'],
+            'name': user.get('name'),
+            'phoneNumber': user.get('phoneNumber')
         }
 
-        self.logger.info(f"Successfully completed login for user ID {user_id}")
+        self.logger.info(f"Successfully completed login for user ID {user['user_id']}")
         return jsonify({'token': token, 'user': user_profile})
 
-def initialize_auth_controller(app, users):
-    return AuthController(app, users) 
+def initialize_auth_controller(app, user_service):
+    return AuthController(app, user_service) 

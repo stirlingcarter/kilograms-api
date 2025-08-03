@@ -10,39 +10,33 @@ from app.auth.decorators import token_required, user_identity_required
 # Add the current directory to Python path so we can import modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Import controllers
+# Import controllers and services
 from controllers.home_controller import get_home
 from controllers.events_controller import events_controller
 from controllers.users_controller import initialize_users_controller
 from controllers.auth_controller import initialize_auth_controller
+from services.user_service import initialize_user_service
 
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-super-secret-and-long-string'
 
 # Twilio Configuration
-app.config['TWILIO_ACCOUNT_SID'] = os.environ.get('TWILIO_ACCOUNT_SID', 'your_account_sid')
-app.config['TWILIO_AUTH_TOKEN'] = os.environ.get('TWILIO_AUTH_TOKEN', 'your_auth_token')
-app.config['TWILIO_PHONE_NUMBER'] = os.environ.get('TWILIO_PHONE_NUMBER', 'your_twilio_phone_number')
+app.config['TWILIO_ACCOUNT_SID'] = os.environ.get('TWILIO_ACCOUNT_SID')
+app.config['TWILIO_AUTH_TOKEN'] = os.environ.get('TWILIO_AUTH_TOKEN')
+app.config['TWILIO_PHONE_NUMBER'] = os.environ.get('TWILIO_PHONE_NUMBER')
 
-# For this example, we'll use a simple in-memory dictionary as our user database.
-# In a real application, you would connect to a database like PostgreSQL or MySQL.
-# The password for the user is hashed for security.
-users = {
-    "1": {
-        "phoneNumber": "1234567890",
-        "name": "Test User",
-        "otp": None,
-        "otp_expiration": None
-    }
-}
-
-# Attach users to the app context so decorators can access it
-app.users = users
+# Initialize services
+user_service = initialize_user_service(app)
 
 # Initialize controllers
-users_controller = initialize_users_controller(app, users)
-auth_controller = initialize_auth_controller(app, users)
+# Note: users_controller may need to be updated to use user_service as well,
+# but for now we leave it as is to focus on the auth flow.
+users_controller = initialize_users_controller(app, {}) # Passing empty dict as in-memory store is no longer used
+auth_controller = initialize_auth_controller(app, user_service)
+
+# Attach user_service to the app context so decorators can access it
+app.user_service = user_service
 
 # Set up logging
 if os.environ.get('FLASK_ENV') == 'production':

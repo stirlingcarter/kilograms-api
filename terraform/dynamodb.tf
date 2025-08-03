@@ -13,9 +13,20 @@ resource "aws_dynamodb_table" "users_table" {
     type = "S"
   }
 
+  attribute {
+    name = "phoneNumber"
+    type = "S"
+  }
+
   global_secondary_index {
     name            = "UsernameIndex"
     hash_key        = "username"
+    projection_type = "ALL"
+  }
+
+  global_secondary_index {
+    name            = "PhoneNumberIndex"
+    hash_key        = "phoneNumber"
     projection_type = "ALL"
   }
 
