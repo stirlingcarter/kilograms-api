@@ -36,6 +36,37 @@ resource "aws_iam_role_policy" "ec2_cloudwatch_policy" {
   })
 }
 
+resource "aws_iam_role_policy" "dynamodb_policy" {
+  name = "dynamodb_policy"
+  role = aws_iam_role.ec2_cloudwatch_role.id
+
+  policy = jsonencode({
+    Version   = "2012-10-17",
+    Statement = [
+      {
+        Action   = [
+          "dynamodb:BatchGetItem",
+          "dynamodb:BatchWriteItem",
+          "dynamodb:ConditionCheckItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:GetItem",
+          "dynamodb:Scan",
+          "dynamodb:Query",
+          "dynamodb:UpdateItem"
+        ],
+        Effect   = "Allow",
+        Resource = [
+          aws_dynamodb_table.users_table.arn,
+          aws_dynamodb_table.posts_table.arn,
+          "${aws_dynamodb_table.users_table.arn}/index/*",
+          "${aws_dynamodb_table.posts_table.arn}/index/*"
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "ec2_cloudwatch_profile" {
   name = "ec2_cloudwatch_profile"
   role = aws_iam_role.ec2_cloudwatch_role.name
